@@ -420,8 +420,7 @@ export default function Inventory() {
       <AlertDialog open={!!dupWarn} onOpenChange={(o) => !o && setDupWarn(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-warning" />Possible duplicate product</AlertTriangle>
-            </AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-warning" />Possible duplicate product</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2">
                 <p>A product named <span className="font-semibold">{draft.name}</span> already exists:</p>
