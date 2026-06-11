@@ -66,7 +66,11 @@ export default function POS() {
     setLastReceipt({ ...sale, customer, tendered, change });
     setCart([]); setCustomer(""); setTendered(0);
     toast.success("Sale recorded");
-    setTimeout(() => window.print(), 200);
+  };
+
+  const printReceipt = () => {
+    if (!lastReceipt) { toast.error("No receipt to print"); return; }
+    setTimeout(() => window.print(), 100);
   };
 
   return (
@@ -196,8 +200,8 @@ export default function POS() {
               Complete Sale · {NGN(total)}
             </Button>
             {lastReceipt && (
-              <Button variant="outline" className="w-full" size="sm" onClick={() => window.print()}>
-                <Printer className="mr-2 h-4 w-4" /> Reprint last receipt
+              <Button variant="outline" className="w-full" size="sm" onClick={printReceipt}>
+                <Printer className="mr-2 h-4 w-4" /> Print receipt
               </Button>
             )}
           </CardContent>
@@ -211,7 +215,7 @@ export default function POS() {
 
 function Receipt({ sale, settings }: { sale: any; settings: any }) {
   return (
-    <div className="receipt-print" style={{ display: "none" }}>
+    <div className="receipt-print hidden print:block">
       <div style={{ textAlign: "center", marginBottom: 6 }}>
         {settings.logo && (
           <div style={{ marginBottom: 4 }}>
