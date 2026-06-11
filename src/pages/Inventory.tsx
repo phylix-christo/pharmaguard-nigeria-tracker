@@ -416,6 +416,34 @@ export default function Inventory() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!dupWarn} onOpenChange={(o) => !o && setDupWarn(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-warning" />Possible duplicate product</AlertTriangle>
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>A product named <span className="font-semibold">{draft.name}</span> already exists:</p>
+                <div className="rounded-md border bg-muted/40 p-2 text-xs space-y-1">
+                  {dupWarn?.map((p) => (
+                    <div key={p.id} className="flex flex-wrap gap-x-3">
+                      <span>Batch: <span className="font-medium">{p.batch || "—"}</span></span>
+                      <span>Expiry: <span className="font-medium">{p.expiry || "—"}</span></span>
+                      <span>Stock: <span className="font-medium">{p.quantity}</span></span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs">If this is the same drug, use <span className="font-medium">Receive Stock</span> instead of creating a new entry.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={performSave}>Add anyway</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
