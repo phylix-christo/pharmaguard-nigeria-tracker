@@ -215,7 +215,7 @@ export default function POS() {
 
 function Receipt({ sale, settings }: { sale: any; settings: any }) {
   return (
-    <div className="receipt-print" style={{ display: "none" }}>
+    <div className="receipt-print hidden print:block">
       <div style={{ textAlign: "center", marginBottom: 6 }}>
         {settings.logo && (
           <div style={{ marginBottom: 4 }}>
