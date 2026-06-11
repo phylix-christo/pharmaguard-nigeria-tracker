@@ -66,7 +66,11 @@ export default function POS() {
     setLastReceipt({ ...sale, customer, tendered, change });
     setCart([]); setCustomer(""); setTendered(0);
     toast.success("Sale recorded");
-    setTimeout(() => window.print(), 200);
+  };
+
+  const printReceipt = () => {
+    if (!lastReceipt) { toast.error("No receipt to print"); return; }
+    setTimeout(() => window.print(), 100);
   };
 
   return (
