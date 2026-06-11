@@ -20,8 +20,12 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = ["Analgesics","Antibiotics","Antimalarials","Antihypertensives","Antiretrovirals","Antidiabetics","Cardiovascular","Vitamins","Supplements","Contraceptives","Controlled Substances","Other"];
-const PACK_SIZES = ["10 Tablets","20 Tablets","30 Capsules","Bottle","Sachet","Box","Vial","Tube","5ml","10ml","100ml","Pack of 6","Pack of 10"];
+const DEFAULT_CATEGORIES = ["Analgesics","Antibiotics","Antimalarials","Antihypertensives","Antiretrovirals","Antidiabetics","Cardiovascular","Vitamins","Supplements","Contraceptives","Controlled Substances"];
+const DEFAULT_PACK_SIZES = ["10 Tablets","20 Tablets","30 Capsules","Bottle","Sachet","Box","Vial","Tube","5ml","10ml","100ml","Pack of 6","Pack of 10"];
+const CAT_KEY = "pg_custom_categories";
+const PACK_KEY = "pg_custom_pack_sizes";
+const loadCustom = (k: string): string[] => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch { return []; } };
+const saveCustom = (k: string, v: string[]) => localStorage.setItem(k, JSON.stringify(v));
 
 const empty: Omit<Product, "id"> = {
   name: "", generic: "", nafdac: "", batch: "", expiry: "", quantity: 0,
