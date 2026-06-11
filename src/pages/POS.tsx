@@ -200,8 +200,8 @@ export default function POS() {
               Complete Sale · {NGN(total)}
             </Button>
             {lastReceipt && (
-              <Button variant="outline" className="w-full" size="sm" onClick={() => window.print()}>
-                <Printer className="mr-2 h-4 w-4" /> Reprint last receipt
+              <Button variant="outline" className="w-full" size="sm" onClick={printReceipt}>
+                <Printer className="mr-2 h-4 w-4" /> Print receipt
               </Button>
             )}
           </CardContent>
