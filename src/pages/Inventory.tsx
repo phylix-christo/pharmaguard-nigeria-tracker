@@ -75,6 +75,12 @@ export default function Inventory() {
   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
   const [dupWarn, setDupWarn] = useState<Product[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [customCats, setCustomCats] = useState<string[]>(() => loadCustom(CAT_KEY));
+  const [customPacks, setCustomPacks] = useState<string[]>(() => loadCustom(PACK_KEY));
+  const [newCat, setNewCat] = useState("");
+  const [newPack, setNewPack] = useState("");
+  const CATEGORIES = useMemo(() => [...DEFAULT_CATEGORIES, ...customCats, "Others"], [customCats]);
+  const PACK_SIZES = useMemo(() => [...DEFAULT_PACK_SIZES, ...customPacks, "Others"], [customPacks]);
 
   const velocity = useMemo(() => salesVelocityMap(sales, 30), [sales]);
 
