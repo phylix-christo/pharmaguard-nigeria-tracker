@@ -69,6 +69,7 @@ export default function Inventory() {
   const [receiveFor, setReceiveFor] = useState<Product | null>(null);
   const [receiveQty, setReceiveQty] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
+  const [dupWarn, setDupWarn] = useState<Product[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const velocity = useMemo(() => salesVelocityMap(sales, 30), [sales]);
@@ -96,8 +97,7 @@ export default function Inventory() {
 
   const openNew = () => { setEditing(null); setDraft(empty); setOpen(true); };
   const openEdit = (p: Product) => { setEditing(p); setDraft({ ...p }); setOpen(true); };
-  const save = () => {
-    if (!draft.name || !draft.expiry) { toast.error("Name and expiry are required"); return; }
+  const performSave = () => {
     const final = { ...draft };
     if (final.supplierId) {
       const s = suppliers.find((x) => x.id === final.supplierId);
@@ -106,6 +106,16 @@ export default function Inventory() {
     if (editing) { store.updateProduct(editing.id, final); toast.success("Product updated"); }
     else { store.addProduct(final); toast.success("Product added"); }
     setOpen(false);
+    setDupWarn(null);
+  };
+  const save = () => {
+    if (!draft.name || !draft.expiry) { toast.error("Name and expiry are required"); return; }
+    if (!editing) {
+      const name = draft.name.trim().toLowerCase();
+      const dups = products.filter((p) => p.name.trim().toLowerCase() === name);
+      if (dups.length > 0) { setDupWarn(dups); return; }
+    }
+    performSave();
   };
 
   const onImageChange = async (file?: File | null) => {
@@ -403,6 +413,33 @@ export default function Inventory() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => { if (confirmDelete) { store.deleteProduct(confirmDelete.id); toast.success("Product deleted"); setConfirmDelete(null); } }}
             >Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!dupWarn} onOpenChange={(o) => !o && setDupWarn(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-warning" />Possible duplicate product</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>A product named <span className="font-semibold">{draft.name}</span> already exists:</p>
+                <div className="rounded-md border bg-muted/40 p-2 text-xs space-y-1">
+                  {dupWarn?.map((p) => (
+                    <div key={p.id} className="flex flex-wrap gap-x-3">
+                      <span>Batch: <span className="font-medium">{p.batch || "—"}</span></span>
+                      <span>Expiry: <span className="font-medium">{p.expiry || "—"}</span></span>
+                      <span>Stock: <span className="font-medium">{p.quantity}</span></span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs">If this is the same drug, use <span className="font-medium">Receive Stock</span> instead of creating a new entry.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={performSave}>Add anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
