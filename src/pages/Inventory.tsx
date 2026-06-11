@@ -97,8 +97,7 @@ export default function Inventory() {
 
   const openNew = () => { setEditing(null); setDraft(empty); setOpen(true); };
   const openEdit = (p: Product) => { setEditing(p); setDraft({ ...p }); setOpen(true); };
-  const save = () => {
-    if (!draft.name || !draft.expiry) { toast.error("Name and expiry are required"); return; }
+  const performSave = () => {
     const final = { ...draft };
     if (final.supplierId) {
       const s = suppliers.find((x) => x.id === final.supplierId);
@@ -107,6 +106,16 @@ export default function Inventory() {
     if (editing) { store.updateProduct(editing.id, final); toast.success("Product updated"); }
     else { store.addProduct(final); toast.success("Product added"); }
     setOpen(false);
+    setDupWarn(null);
+  };
+  const save = () => {
+    if (!draft.name || !draft.expiry) { toast.error("Name and expiry are required"); return; }
+    if (!editing) {
+      const name = draft.name.trim().toLowerCase();
+      const dups = products.filter((p) => p.name.trim().toLowerCase() === name);
+      if (dups.length > 0) { setDupWarn(dups); return; }
+    }
+    performSave();
   };
 
   const onImageChange = async (file?: File | null) => {
