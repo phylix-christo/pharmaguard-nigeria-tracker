@@ -20,8 +20,12 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = ["Analgesics","Antibiotics","Antimalarials","Antihypertensives","Antiretrovirals","Antidiabetics","Cardiovascular","Vitamins","Supplements","Contraceptives","Controlled Substances","Other"];
-const PACK_SIZES = ["10 Tablets","20 Tablets","30 Capsules","Bottle","Sachet","Box","Vial","Tube","5ml","10ml","100ml","Pack of 6","Pack of 10"];
+const DEFAULT_CATEGORIES = ["Analgesics","Antibiotics","Antimalarials","Antihypertensives","Antiretrovirals","Antidiabetics","Cardiovascular","Vitamins","Supplements","Contraceptives","Controlled Substances"];
+const DEFAULT_PACK_SIZES = ["10 Tablets","20 Tablets","30 Capsules","Bottle","Sachet","Box","Vial","Tube","5ml","10ml","100ml","Pack of 6","Pack of 10"];
+const CAT_KEY = "pg_custom_categories";
+const PACK_KEY = "pg_custom_pack_sizes";
+const loadCustom = (k: string): string[] => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch { return []; } };
+const saveCustom = (k: string, v: string[]) => localStorage.setItem(k, JSON.stringify(v));
 
 const empty: Omit<Product, "id"> = {
   name: "", generic: "", nafdac: "", batch: "", expiry: "", quantity: 0,
@@ -71,6 +75,12 @@ export default function Inventory() {
   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
   const [dupWarn, setDupWarn] = useState<Product[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [customCats, setCustomCats] = useState<string[]>(() => loadCustom(CAT_KEY));
+  const [customPacks, setCustomPacks] = useState<string[]>(() => loadCustom(PACK_KEY));
+  const [newCat, setNewCat] = useState("");
+  const [newPack, setNewPack] = useState("");
+  const CATEGORIES = useMemo(() => [...DEFAULT_CATEGORIES, ...customCats, "Others"], [customCats]);
+  const PACK_SIZES = useMemo(() => [...DEFAULT_PACK_SIZES, ...customPacks, "Others"], [customPacks]);
 
   const velocity = useMemo(() => salesVelocityMap(sales, 30), [sales]);
 
@@ -344,17 +354,57 @@ export default function Inventory() {
             <Field label="Last restocked" type="date" v={draft.lastRestocked || ""} on={(v) => setDraft({ ...draft, lastRestocked: v })} />
             <div>
               <Label>Therapeutic Category</Label>
-              <Select value={draft.category} onValueChange={(v) => setDraft({ ...draft, category: v, controlled: v === "Controlled Substances" })}>
+              <Select
+                value={CATEGORIES.includes(draft.category) ? draft.category : "Others"}
+                onValueChange={(v) => {
+                  if (v === "Others") { setDraft({ ...draft, category: "" }); setNewCat(""); }
+                  else setDraft({ ...draft, category: v, controlled: v === "Controlled Substances" });
+                }}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
+              {(!CATEGORIES.includes(draft.category) || (draft.category === "" )) && (
+                <div className="mt-2 flex gap-2">
+                  <Input placeholder="Enter custom category" value={newCat || draft.category} onChange={(e) => { setNewCat(e.target.value); setDraft({ ...draft, category: e.target.value }); }} />
+                  <Button type="button" size="sm" variant="outline" onClick={() => {
+                    const v = (newCat || draft.category).trim();
+                    if (!v) return;
+                    if (!customCats.includes(v) && !DEFAULT_CATEGORIES.includes(v)) {
+                      const next = [...customCats, v]; setCustomCats(next); saveCustom(CAT_KEY, next);
+                    }
+                    setDraft({ ...draft, category: v }); setNewCat("");
+                    toast.success("Category saved");
+                  }}>Save</Button>
+                </div>
+              )}
             </div>
             <div>
               <Label>Pack Size / Unit</Label>
-              <Select value={draft.packSize} onValueChange={(v) => setDraft({ ...draft, packSize: v })}>
+              <Select
+                value={PACK_SIZES.includes(draft.packSize) ? draft.packSize : "Others"}
+                onValueChange={(v) => {
+                  if (v === "Others") { setDraft({ ...draft, packSize: "" }); setNewPack(""); }
+                  else setDraft({ ...draft, packSize: v });
+                }}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{PACK_SIZES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
+              {(!PACK_SIZES.includes(draft.packSize) || draft.packSize === "") && (
+                <div className="mt-2 flex gap-2">
+                  <Input placeholder="Enter custom pack size" value={newPack || draft.packSize} onChange={(e) => { setNewPack(e.target.value); setDraft({ ...draft, packSize: e.target.value }); }} />
+                  <Button type="button" size="sm" variant="outline" onClick={() => {
+                    const v = (newPack || draft.packSize).trim();
+                    if (!v) return;
+                    if (!customPacks.includes(v) && !DEFAULT_PACK_SIZES.includes(v)) {
+                      const next = [...customPacks, v]; setCustomPacks(next); saveCustom(PACK_KEY, next);
+                    }
+                    setDraft({ ...draft, packSize: v }); setNewPack("");
+                    toast.success("Pack size saved");
+                  }}>Save</Button>
+                </div>
+              )}
             </div>
             <Field label="Quantity in stock" type="number" v={String(draft.quantity)} on={(v) => setDraft({ ...draft, quantity: +v })} />
             <Field label="Reorder Level" type="number" v={String(draft.reorderLevel)} on={(v) => setDraft({ ...draft, reorderLevel: +v })} />
