@@ -199,11 +199,9 @@ export default function POS() {
             <Button className="w-full" size="lg" onClick={checkout} disabled={cart.length === 0}>
               Complete Sale · {NGN(total)}
             </Button>
-            {lastReceipt && (
-              <Button variant="outline" className="w-full" size="sm" onClick={printReceipt}>
-                <Printer className="mr-2 h-4 w-4" /> Print receipt
-              </Button>
-            )}
+            <Button variant="outline" className="w-full" size="sm" onClick={printReceipt} disabled={!lastReceipt}>
+              <Printer className="mr-2 h-4 w-4" /> Print receipt
+            </Button>
           </CardContent>
         </Card>
       </div>
