@@ -69,6 +69,7 @@ export default function Inventory() {
   const [receiveFor, setReceiveFor] = useState<Product | null>(null);
   const [receiveQty, setReceiveQty] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
+  const [dupWarn, setDupWarn] = useState<Product[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const velocity = useMemo(() => salesVelocityMap(sales, 30), [sales]);
