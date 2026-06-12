@@ -18,24 +18,37 @@ export default function POS() {
   const products = useStore((s) => s.products);
   const user = useStore((s) => s.user);
   const [q, setQ] = useState("");
+  const [filter, setFilter] = useState<"all" | "controlled" | "low">("all");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [payment, setPayment] = useState<"Cash" | "POS" | "Bank Transfer" | "Mobile Money">("Cash");
   const [customer, setCustomer] = useState("");
   const [tendered, setTendered] = useState(0);
   const [lastReceipt, setLastReceipt] = useState<any>(null);
   const [quickMode, setQuickMode] = useState(false);
+  const [controlledOpen, setControlledOpen] = useState(false);
   const settings = useStore((s) => s.settings);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return products.slice(0, 8);
-    return products.filter((p) =>
-      p.name.toLowerCase().includes(term) ||
-      p.generic.toLowerCase().includes(term) ||
-      p.barcode === term ||
-      p.nafdac.toLowerCase().includes(term)
-    ).slice(0, 12);
-  }, [q, products]);
+    let list = products;
+    if (filter === "controlled") list = list.filter((p) => p.controlled);
+    else if (filter === "low") list = list.filter((p) => p.quantity <= p.reorderLevel);
+    if (term) {
+      list = list.filter((p) =>
+        p.name.toLowerCase().includes(term) ||
+        p.generic.toLowerCase().includes(term) ||
+        p.barcode === term ||
+        p.nafdac.toLowerCase().includes(term)
+      );
+    }
+    return list;
+  }, [q, products, filter]);
+
+  const counts = useMemo(() => ({
+    all: products.length,
+    controlled: products.filter((p) => p.controlled).length,
+    low: products.filter((p) => p.quantity <= p.reorderLevel).length,
+  }), [products]);
 
   const add = (id: string) => {
     const p = products.find((x) => x.id === id);
