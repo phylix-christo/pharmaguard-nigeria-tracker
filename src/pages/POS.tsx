@@ -134,7 +134,7 @@ export default function POS() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="space-y-3 lg:col-span-3">
           <Card className="shadow-card">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 space-y-3">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -146,28 +146,43 @@ export default function POS() {
                   onKeyDown={(e) => { if (e.key === "Enter" && results[0]) add(results[0].id); }}
                 />
               </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>
+                  All <Badge variant="secondary" className="ml-2">{counts.all}</Badge>
+                </Button>
+                <Button size="sm" variant={filter === "controlled" ? "default" : "outline"} onClick={() => setFilter("controlled")}
+                  className={filter === "controlled" ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground" : ""}>
+                  <ShieldAlert className="mr-1 h-3.5 w-3.5" /> Controlled <Badge variant="secondary" className="ml-2">{counts.controlled}</Badge>
+                </Button>
+                <Button size="sm" variant={filter === "low" ? "default" : "outline"} onClick={() => setFilter("low")}
+                  className={filter === "low" ? "bg-warning hover:bg-warning/90 text-warning-foreground" : ""}>
+                  Low stock <Badge variant="secondary" className="ml-2">{counts.low}</Badge>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                {results.map((p) => {
-                  const s = expiryStatus(p.expiry);
-                  return (
-                    <button key={p.id} onClick={() => add(p.id)} disabled={p.quantity <= 0 || s === "expired"}
-                      className="rounded-lg border bg-card p-3 text-left transition hover:border-primary hover:shadow-card disabled:opacity-50">
-                      <div className="line-clamp-1 text-sm font-medium">{p.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{p.generic}</div>
-                      <div className="mt-1 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-primary">{NGN(p.sellingPrice)}</span>
-                        <Badge variant="outline" className={
-                          s === "expired" ? "border-destructive text-destructive" :
-                          s === "critical" ? "border-destructive text-destructive" :
-                          s === "warning" ? "border-warning text-warning" :
-                          "border-success text-success"
-                        }>{p.quantity}</Badge>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="max-h-[60vh] overflow-auto pr-1">
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                  {results.length === 0 && <div className="col-span-full py-8 text-center text-sm text-muted-foreground">No products match</div>}
+                  {results.map((p) => {
+                    const s = expiryStatus(p.expiry);
+                    return (
+                      <button key={p.id} onClick={() => add(p.id)} disabled={p.quantity <= 0 || s === "expired"}
+                        className={`rounded-lg border bg-card p-3 text-left transition hover:border-primary hover:shadow-card disabled:opacity-50 ${p.controlled ? "border-l-4 border-l-destructive" : ""}`}>
+                        <div className="line-clamp-1 text-sm font-medium">{p.name}</div>
+                        <div className="text-[11px] text-muted-foreground line-clamp-1">{p.generic}</div>
+                        <div className="mt-1 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-primary">{NGN(p.sellingPrice)}</span>
+                          <Badge variant="outline" className={
+                            s === "expired" || s === "critical" ? "border-destructive text-destructive" :
+                            s === "warning" ? "border-warning text-warning" :
+                            "border-success text-success"
+                          }>{p.quantity}</Badge>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </CardContent>
           </Card>
