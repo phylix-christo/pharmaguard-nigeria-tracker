@@ -71,15 +71,36 @@ export default function POS() {
   const profit = cart.reduce((a, l) => a + l.qty * (l.price - l.cost), 0);
   const change = payment === "Cash" ? Math.max(0, tendered - total) : 0;
 
-  const checkout = () => {
-    if (cart.length === 0) return;
+  const controlledInCart = cart.filter((l) => products.find((p) => p.id === l.productId)?.controlled);
+
+  const finalizeSale = (controlledForms?: Record<string, { patientName: string; patientPhone: string; prescriber: string; prescriberRegNo: string; prescriptionRef: string }>) => {
     const sale = store.recordSale({
       items: cart.map(({ productId, name, qty, price, cost }) => ({ productId, name, qty, price, cost })),
       total, profit, payment, cashier: user?.username || "user", customer: customer || undefined,
     });
+    if (controlledForms) {
+      for (const l of controlledInCart) {
+        const f = controlledForms[l.productId];
+        if (!f) continue;
+        const p = products.find((x) => x.id === l.productId);
+        store.recordControlledDispense({
+          productId: l.productId, productName: l.name, batch: p?.batch || "",
+          quantity: l.qty, amount: l.qty * l.price,
+          patientName: f.patientName, patientPhone: f.patientPhone,
+          prescriber: f.prescriber, prescriberRegNo: f.prescriberRegNo,
+          prescriptionRef: f.prescriptionRef,
+        });
+      }
+    }
     setLastReceipt({ ...sale, customer, tendered, change });
-    setCart([]); setCustomer(""); setTendered(0);
+    setCart([]); setCustomer(""); setTendered(0); setControlledOpen(false);
     toast.success("Sale recorded");
+  };
+
+  const checkout = () => {
+    if (cart.length === 0) return;
+    if (controlledInCart.length > 0) { setControlledOpen(true); return; }
+    finalizeSale();
   };
 
   const printReceipt = () => {
