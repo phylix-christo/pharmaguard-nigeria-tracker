@@ -100,6 +100,9 @@ export default function Poisons() {
     }
     doc.save(`poisons-register-${format(new Date(), "yyyy-MM-dd")}.pdf`);
     toast.success("Inspection-ready PDF generated");
+  };
+
+
 
   return (
     <div className="space-y-4">
