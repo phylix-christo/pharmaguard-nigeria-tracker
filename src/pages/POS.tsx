@@ -257,6 +257,13 @@ export default function POS() {
       </div>
 
       {lastReceipt && <Receipt sale={lastReceipt} settings={settings} />}
+
+      <ControlledDispenseDialog
+        open={controlledOpen}
+        onOpenChange={setControlledOpen}
+        items={controlledInCart}
+        onConfirm={finalizeSale}
+      />
     </div>
   );
 }
