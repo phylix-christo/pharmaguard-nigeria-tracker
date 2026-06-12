@@ -117,8 +117,9 @@ export default function Poisons() {
             <p className="mt-1 text-xs text-muted-foreground">Premise: <span className="font-medium">{settings.name}</span> · License: {settings.premiseLicense || "—"}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={exportCsv}><FileDown className="mr-1.5 h-4 w-4" />Export CSV</Button>
+          <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={exportInspectionPdf}><ShieldCheck className="mr-1.5 h-4 w-4" />Inspection-ready PDF</Button>
           <DispenseDialog products={controlled} />
         </div>
       </div>
