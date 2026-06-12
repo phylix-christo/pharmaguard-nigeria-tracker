@@ -10,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { store, useStore } from "@/lib/store";
 import { NGN } from "@/lib/format";
 import { format } from "date-fns";
-import { ShieldAlert, ClipboardPlus, FileDown } from "lucide-react";
+import { ShieldAlert, ClipboardPlus, FileDown, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function Poisons() {
   const products = useStore((s) => s.products);
@@ -41,6 +43,67 @@ export default function Poisons() {
     a.click();
   };
 
+  const exportInspectionPdf = () => {
+    const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+
+    doc.setFontSize(16); doc.setFont("helvetica", "bold");
+    doc.text(settings.name, pageW / 2, 16, { align: "center" });
+    doc.setFontSize(9); doc.setFont("helvetica", "normal");
+    doc.text(settings.address || "", pageW / 2, 22, { align: "center" });
+    doc.text(`Tel: ${settings.phone || "—"}  ·  PCN Premise License: ${settings.premiseLicense || "—"}`, pageW / 2, 27, { align: "center" });
+
+    doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    doc.text("POISONS REGISTER / CONTROLLED DRUGS LOG", pageW / 2, 36, { align: "center" });
+    doc.setFontSize(8); doc.setFont("helvetica", "normal");
+    doc.text("Statutory record per Pharmacists Council of Nigeria (PCN) & NDLEA requirements", pageW / 2, 41, { align: "center" });
+    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}  ·  Total entries: ${dispenses.length}  ·  Controlled SKUs: ${controlled.length}`, pageW / 2, 46, { align: "center" });
+
+    let y = 54;
+    doc.setFontSize(11); doc.setFont("helvetica", "bold");
+    doc.text("1. Controlled substances on hand", 14, y); y += 2;
+    autoTable(doc, {
+      startY: y, styles: { fontSize: 8 }, headStyles: { fillColor: [180, 50, 50] },
+      head: [["Drug", "NAFDAC", "Batch", "Balance", "Reorder", "Expiry"]],
+      body: controlled.length === 0 ? [["—", "—", "—", "—", "—", "—"]] :
+        controlled.map((p) => [p.name, p.nafdac, p.batch, String(p.quantity), String(p.reorderLevel), p.expiry]),
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    if (y > 230) { doc.addPage(); y = 20; }
+    doc.setFontSize(11); doc.setFont("helvetica", "bold");
+    doc.text("2. Statutory dispensing log", 14, y); y += 2;
+    autoTable(doc, {
+      startY: y, styles: { fontSize: 7, cellPadding: 1.5 }, headStyles: { fillColor: [180, 50, 50] },
+      head: [["Date", "Drug", "Batch", "Qty", "Amount", "Patient", "Phone", "Prescriber", "Reg No", "Rx Ref"]],
+      body: dispenses.length === 0 ? [["—","—","—","—","—","—","—","—","—","—"]] :
+        dispenses.map((d) => [
+          format(new Date(d.at), "dd-MM-yy HH:mm"), d.productName, d.batch, String(d.quantity),
+          NGN(d.amount), d.patientName, d.patientPhone || "—",
+          d.prescriber, d.prescriberRegNo || "—", d.prescriptionRef,
+        ]),
+    });
+    y = (doc as any).lastAutoTable.finalY + 14;
+
+    if (y > 250) { doc.addPage(); y = 30; }
+    doc.setFontSize(9); doc.setFont("helvetica", "normal");
+    doc.text("Certified true record of controlled drugs dispensed at the above premise.", 14, y); y += 14;
+    doc.text("Superintendent Pharmacist: _______________________________", 14, y); y += 8;
+    doc.text("PCN Reg No: _______________________   Signature: _______________________   Date: ____________", 14, y);
+
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7); doc.setTextColor(120);
+      doc.text(`${settings.name} — Poisons Register — Page ${i} of ${pages}`, pageW / 2, pageH - 8, { align: "center" });
+    }
+    doc.save(`poisons-register-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    toast.success("Inspection-ready PDF generated");
+  };
+
+
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -54,8 +117,9 @@ export default function Poisons() {
             <p className="mt-1 text-xs text-muted-foreground">Premise: <span className="font-medium">{settings.name}</span> · License: {settings.premiseLicense || "—"}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={exportCsv}><FileDown className="mr-1.5 h-4 w-4" />Export CSV</Button>
+          <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={exportInspectionPdf}><ShieldCheck className="mr-1.5 h-4 w-4" />Inspection-ready PDF</Button>
           <DispenseDialog products={controlled} />
         </div>
       </div>
