@@ -315,3 +315,92 @@ function Receipt({ sale, settings }: { sale: any; settings: any }) {
     </div>
   );
 }
+
+function ControlledDispenseDialog({
+  open, onOpenChange, items, onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  items: CartLine[];
+  onConfirm: (forms: Record<string, { patientName: string; patientPhone: string; prescriber: string; prescriberRegNo: string; prescriptionRef: string }>) => void;
+}) {
+  const [forms, setForms] = useState<Record<string, any>>({});
+  const update = (id: string, field: string, value: string) =>
+    setForms((f) => ({ ...f, [id]: { ...(f[id] || {}), [field]: value } }));
+
+  const submit = () => {
+    for (const it of items) {
+      const f = forms[it.productId] || {};
+      if (!f.patientName?.trim() || !f.prescriber?.trim() || !f.prescriptionRef?.trim()) {
+        toast.error(`Fill required fields for ${it.name}`);
+        return;
+      }
+    }
+    const clean: any = {};
+    for (const it of items) {
+      const f = forms[it.productId] || {};
+      clean[it.productId] = {
+        patientName: (f.patientName || "").trim(),
+        patientPhone: (f.patientPhone || "").trim(),
+        prescriber: (f.prescriber || "").trim(),
+        prescriberRegNo: (f.prescriberRegNo || "").trim(),
+        prescriptionRef: (f.prescriptionRef || "").trim(),
+      };
+    }
+    onConfirm(clean);
+    setForms({});
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <ShieldAlert className="h-5 w-5" /> Controlled Drug Dispensing Form
+          </DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          Statutory record required (PCN / NDLEA). Complete one form per controlled item. Entry will be saved to the Poisons Register.
+        </p>
+        <div className="space-y-4">
+          {items.map((it) => (
+            <div key={it.productId} className="rounded-md border border-destructive/40 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="font-medium text-sm">{it.name}</div>
+                <Badge variant="outline" className="border-destructive text-destructive">Qty {it.qty}</Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                <div>
+                  <Label className="text-xs">Patient name *</Label>
+                  <Input value={forms[it.productId]?.patientName || ""} onChange={(e) => update(it.productId, "patientName", e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Patient phone</Label>
+                  <Input value={forms[it.productId]?.patientPhone || ""} onChange={(e) => update(it.productId, "patientPhone", e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Prescriber (Doctor) *</Label>
+                  <Input value={forms[it.productId]?.prescriber || ""} onChange={(e) => update(it.productId, "prescriber", e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">MDCN / Reg No</Label>
+                  <Input value={forms[it.productId]?.prescriberRegNo || ""} onChange={(e) => update(it.productId, "prescriberRegNo", e.target.value)} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-xs">Prescription Ref *</Label>
+                  <Input value={forms[it.productId]?.prescriptionRef || ""} onChange={(e) => update(it.productId, "prescriptionRef", e.target.value)} placeholder="e.g. RX-2026-00123" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={submit} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+            Save & complete sale
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
