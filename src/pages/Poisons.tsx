@@ -10,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { store, useStore } from "@/lib/store";
 import { NGN } from "@/lib/format";
 import { format } from "date-fns";
-import { ShieldAlert, ClipboardPlus, FileDown } from "lucide-react";
+import { ShieldAlert, ClipboardPlus, FileDown, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function Poisons() {
   const products = useStore((s) => s.products);
