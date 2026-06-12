@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Minus, Trash2, ShoppingCart, Printer, Zap } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Search, Plus, Minus, Trash2, ShoppingCart, Printer, Zap, ShieldAlert } from "lucide-react";
 import { store, useStore, SaleItem } from "@/lib/store";
 import { NGN, expiryStatus } from "@/lib/format";
 import { toast } from "sonner";
@@ -17,24 +18,37 @@ export default function POS() {
   const products = useStore((s) => s.products);
   const user = useStore((s) => s.user);
   const [q, setQ] = useState("");
+  const [filter, setFilter] = useState<"all" | "controlled" | "low">("all");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [payment, setPayment] = useState<"Cash" | "POS" | "Bank Transfer" | "Mobile Money">("Cash");
   const [customer, setCustomer] = useState("");
   const [tendered, setTendered] = useState(0);
   const [lastReceipt, setLastReceipt] = useState<any>(null);
   const [quickMode, setQuickMode] = useState(false);
+  const [controlledOpen, setControlledOpen] = useState(false);
   const settings = useStore((s) => s.settings);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return products.slice(0, 8);
-    return products.filter((p) =>
-      p.name.toLowerCase().includes(term) ||
-      p.generic.toLowerCase().includes(term) ||
-      p.barcode === term ||
-      p.nafdac.toLowerCase().includes(term)
-    ).slice(0, 12);
-  }, [q, products]);
+    let list = products;
+    if (filter === "controlled") list = list.filter((p) => p.controlled);
+    else if (filter === "low") list = list.filter((p) => p.quantity <= p.reorderLevel);
+    if (term) {
+      list = list.filter((p) =>
+        p.name.toLowerCase().includes(term) ||
+        p.generic.toLowerCase().includes(term) ||
+        p.barcode === term ||
+        p.nafdac.toLowerCase().includes(term)
+      );
+    }
+    return list;
+  }, [q, products, filter]);
+
+  const counts = useMemo(() => ({
+    all: products.length,
+    controlled: products.filter((p) => p.controlled).length,
+    low: products.filter((p) => p.quantity <= p.reorderLevel).length,
+  }), [products]);
 
   const add = (id: string) => {
     const p = products.find((x) => x.id === id);
@@ -57,15 +71,36 @@ export default function POS() {
   const profit = cart.reduce((a, l) => a + l.qty * (l.price - l.cost), 0);
   const change = payment === "Cash" ? Math.max(0, tendered - total) : 0;
 
-  const checkout = () => {
-    if (cart.length === 0) return;
+  const controlledInCart = cart.filter((l) => products.find((p) => p.id === l.productId)?.controlled);
+
+  const finalizeSale = (controlledForms?: Record<string, { patientName: string; patientPhone: string; prescriber: string; prescriberRegNo: string; prescriptionRef: string }>) => {
     const sale = store.recordSale({
       items: cart.map(({ productId, name, qty, price, cost }) => ({ productId, name, qty, price, cost })),
       total, profit, payment, cashier: user?.username || "user", customer: customer || undefined,
     });
+    if (controlledForms) {
+      for (const l of controlledInCart) {
+        const f = controlledForms[l.productId];
+        if (!f) continue;
+        const p = products.find((x) => x.id === l.productId);
+        store.recordControlledDispense({
+          productId: l.productId, productName: l.name, batch: p?.batch || "",
+          quantity: l.qty, amount: l.qty * l.price,
+          patientName: f.patientName, patientPhone: f.patientPhone,
+          prescriber: f.prescriber, prescriberRegNo: f.prescriberRegNo,
+          prescriptionRef: f.prescriptionRef,
+        });
+      }
+    }
     setLastReceipt({ ...sale, customer, tendered, change });
-    setCart([]); setCustomer(""); setTendered(0);
+    setCart([]); setCustomer(""); setTendered(0); setControlledOpen(false);
     toast.success("Sale recorded");
+  };
+
+  const checkout = () => {
+    if (cart.length === 0) return;
+    if (controlledInCart.length > 0) { setControlledOpen(true); return; }
+    finalizeSale();
   };
 
   const printReceipt = () => {
@@ -99,7 +134,7 @@ export default function POS() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="space-y-3 lg:col-span-3">
           <Card className="shadow-card">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 space-y-3">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -111,28 +146,43 @@ export default function POS() {
                   onKeyDown={(e) => { if (e.key === "Enter" && results[0]) add(results[0].id); }}
                 />
               </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>
+                  All <Badge variant="secondary" className="ml-2">{counts.all}</Badge>
+                </Button>
+                <Button size="sm" variant={filter === "controlled" ? "default" : "outline"} onClick={() => setFilter("controlled")}
+                  className={filter === "controlled" ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground" : ""}>
+                  <ShieldAlert className="mr-1 h-3.5 w-3.5" /> Controlled <Badge variant="secondary" className="ml-2">{counts.controlled}</Badge>
+                </Button>
+                <Button size="sm" variant={filter === "low" ? "default" : "outline"} onClick={() => setFilter("low")}
+                  className={filter === "low" ? "bg-warning hover:bg-warning/90 text-warning-foreground" : ""}>
+                  Low stock <Badge variant="secondary" className="ml-2">{counts.low}</Badge>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                {results.map((p) => {
-                  const s = expiryStatus(p.expiry);
-                  return (
-                    <button key={p.id} onClick={() => add(p.id)} disabled={p.quantity <= 0 || s === "expired"}
-                      className="rounded-lg border bg-card p-3 text-left transition hover:border-primary hover:shadow-card disabled:opacity-50">
-                      <div className="line-clamp-1 text-sm font-medium">{p.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{p.generic}</div>
-                      <div className="mt-1 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-primary">{NGN(p.sellingPrice)}</span>
-                        <Badge variant="outline" className={
-                          s === "expired" ? "border-destructive text-destructive" :
-                          s === "critical" ? "border-destructive text-destructive" :
-                          s === "warning" ? "border-warning text-warning" :
-                          "border-success text-success"
-                        }>{p.quantity}</Badge>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="max-h-[60vh] overflow-auto pr-1">
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                  {results.length === 0 && <div className="col-span-full py-8 text-center text-sm text-muted-foreground">No products match</div>}
+                  {results.map((p) => {
+                    const s = expiryStatus(p.expiry);
+                    return (
+                      <button key={p.id} onClick={() => add(p.id)} disabled={p.quantity <= 0 || s === "expired"}
+                        className={`rounded-lg border bg-card p-3 text-left transition hover:border-primary hover:shadow-card disabled:opacity-50 ${p.controlled ? "border-l-4 border-l-destructive" : ""}`}>
+                        <div className="line-clamp-1 text-sm font-medium">{p.name}</div>
+                        <div className="text-[11px] text-muted-foreground line-clamp-1">{p.generic}</div>
+                        <div className="mt-1 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-primary">{NGN(p.sellingPrice)}</span>
+                          <Badge variant="outline" className={
+                            s === "expired" || s === "critical" ? "border-destructive text-destructive" :
+                            s === "warning" ? "border-warning text-warning" :
+                            "border-success text-success"
+                          }>{p.quantity}</Badge>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -207,6 +257,13 @@ export default function POS() {
       </div>
 
       {lastReceipt && <Receipt sale={lastReceipt} settings={settings} />}
+
+      <ControlledDispenseDialog
+        open={controlledOpen}
+        onOpenChange={setControlledOpen}
+        items={controlledInCart}
+        onConfirm={finalizeSale}
+      />
     </div>
   );
 }
@@ -256,5 +313,94 @@ function Receipt({ sale, settings }: { sale: any; settings: any }) {
         Thank you for your patronage<br />Goods sold are not returnable
       </div>
     </div>
+  );
+}
+
+function ControlledDispenseDialog({
+  open, onOpenChange, items, onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  items: CartLine[];
+  onConfirm: (forms: Record<string, { patientName: string; patientPhone: string; prescriber: string; prescriberRegNo: string; prescriptionRef: string }>) => void;
+}) {
+  const [forms, setForms] = useState<Record<string, any>>({});
+  const update = (id: string, field: string, value: string) =>
+    setForms((f) => ({ ...f, [id]: { ...(f[id] || {}), [field]: value } }));
+
+  const submit = () => {
+    for (const it of items) {
+      const f = forms[it.productId] || {};
+      if (!f.patientName?.trim() || !f.prescriber?.trim() || !f.prescriptionRef?.trim()) {
+        toast.error(`Fill required fields for ${it.name}`);
+        return;
+      }
+    }
+    const clean: any = {};
+    for (const it of items) {
+      const f = forms[it.productId] || {};
+      clean[it.productId] = {
+        patientName: (f.patientName || "").trim(),
+        patientPhone: (f.patientPhone || "").trim(),
+        prescriber: (f.prescriber || "").trim(),
+        prescriberRegNo: (f.prescriberRegNo || "").trim(),
+        prescriptionRef: (f.prescriptionRef || "").trim(),
+      };
+    }
+    onConfirm(clean);
+    setForms({});
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <ShieldAlert className="h-5 w-5" /> Controlled Drug Dispensing Form
+          </DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          Statutory record required (PCN / NDLEA). Complete one form per controlled item. Entry will be saved to the Poisons Register.
+        </p>
+        <div className="space-y-4">
+          {items.map((it) => (
+            <div key={it.productId} className="rounded-md border border-destructive/40 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="font-medium text-sm">{it.name}</div>
+                <Badge variant="outline" className="border-destructive text-destructive">Qty {it.qty}</Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                <div>
+                  <Label className="text-xs">Patient name *</Label>
+                  <Input value={forms[it.productId]?.patientName || ""} onChange={(e) => update(it.productId, "patientName", e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Patient phone</Label>
+                  <Input value={forms[it.productId]?.patientPhone || ""} onChange={(e) => update(it.productId, "patientPhone", e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Prescriber (Doctor) *</Label>
+                  <Input value={forms[it.productId]?.prescriber || ""} onChange={(e) => update(it.productId, "prescriber", e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">MDCN / Reg No</Label>
+                  <Input value={forms[it.productId]?.prescriberRegNo || ""} onChange={(e) => update(it.productId, "prescriberRegNo", e.target.value)} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-xs">Prescription Ref *</Label>
+                  <Input value={forms[it.productId]?.prescriptionRef || ""} onChange={(e) => update(it.productId, "prescriptionRef", e.target.value)} placeholder="e.g. RX-2026-00123" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={submit} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+            Save & complete sale
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
