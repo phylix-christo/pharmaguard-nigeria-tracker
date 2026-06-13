@@ -74,7 +74,10 @@ export default function POS() {
   const setQty = (id: string, qty: number) => setCart((c) => c.map((l) => l.productId === id ? { ...l, qty: Math.max(1, Math.min(l.stock, qty)) } : l));
   const remove = (id: string) => setCart((c) => c.filter((l) => l.productId !== id));
 
-  const total = cart.reduce((a, l) => a + l.qty * l.price, 0);
+  const vat = useMemo(() => loadVatPrefs(), [lastReceipt, controlledOpen]);
+  const subtotal = cart.reduce((a, l) => a + l.qty * l.price, 0);
+  const vatAmount = vat.vatEnabled ? +(subtotal * (vat.vatRate / 100)).toFixed(2) : 0;
+  const total = +(subtotal + vatAmount).toFixed(2);
   const profit = cart.reduce((a, l) => a + l.qty * (l.price - l.cost), 0);
   const change = payment === "Cash" ? Math.max(0, tendered - total) : 0;
 
