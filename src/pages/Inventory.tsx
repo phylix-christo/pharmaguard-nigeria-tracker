@@ -13,7 +13,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, PackagePlus, Search, Upload, Download, ImageIcon, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, PackagePlus, Search, Upload, Download, ImageIcon, AlertTriangle, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { store, useStore, Product, salesVelocityMap, movementSpeed } from "@/lib/store";
 import { NGN, expiryTier, expiryBadgeClass, daysUntil, movementBadgeClass } from "@/lib/format";
 import { toast } from "sonner";
@@ -79,13 +79,20 @@ export default function Inventory() {
   const [customPacks, setCustomPacks] = useState<string[]>(() => loadCustom(PACK_KEY));
   const [newCat, setNewCat] = useState("");
   const [newPack, setNewPack] = useState("");
+  type SortKey = "name" | "generic" | "nafdac" | "packSize" | "batch" | "expiry" | "quantity" | "reorderLevel" | "reorderQuantity" | "costPrice" | "sellingPrice" | "supplier";
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const toggleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortKey(k); setSortDir("asc"); }
+  };
   const CATEGORIES = useMemo(() => [...DEFAULT_CATEGORIES, ...customCats, "Others"], [customCats]);
   const PACK_SIZES = useMemo(() => [...DEFAULT_PACK_SIZES, ...customPacks, "Others"], [customPacks]);
 
   const velocity = useMemo(() => salesVelocityMap(sales, 30), [sales]);
 
   const list = useMemo(() => {
-    return products.filter((p) => {
+    const filtered = products.filter((p) => {
       const t = expiryTier(p.expiry);
       const sold30 = velocity.get(p.id) || 0;
       const speed = movementSpeed(sold30);
@@ -103,7 +110,19 @@ export default function Inventory() {
         || p.nafdac.toLowerCase().includes(term)
         || p.batch.toLowerCase().includes(term);
     });
-  }, [products, q, cat, filter, supFilter, expFilter, moveFilter, velocity]);
+    const dir = sortDir === "asc" ? 1 : -1;
+    const numericKeys = new Set(["quantity","reorderLevel","reorderQuantity","costPrice","sellingPrice"]);
+    return [...filtered].sort((a, b) => {
+      let av: any = (a as any)[sortKey];
+      let bv: any = (b as any)[sortKey];
+      if (sortKey === "expiry") { av = new Date(av).getTime() || 0; bv = new Date(bv).getTime() || 0; }
+      else if (numericKeys.has(sortKey)) { av = Number(av) || 0; bv = Number(bv) || 0; }
+      else { av = String(av ?? "").toLowerCase(); bv = String(bv ?? "").toLowerCase(); }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [products, q, cat, filter, supFilter, expFilter, moveFilter, velocity, sortKey, sortDir]);
 
   const openNew = () => { setEditing(null); setDraft(empty); setOpen(true); };
   const openEdit = (p: Product) => { setEditing(p); setDraft({ ...p }); setOpen(true); };
@@ -234,22 +253,42 @@ export default function Inventory() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[60px]">Image</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Generic</TableHead>
-                  <TableHead>NAFDAC</TableHead>
-                  <TableHead>Pack</TableHead>
-                  <TableHead>Batch</TableHead>
-                  <TableHead>Expiry</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Stock</TableHead>
-                  <TableHead className="text-right">Reorder</TableHead>
-                  <TableHead className="text-right">Reorder Qty</TableHead>
-                  <TableHead>Movement</TableHead>
-                  <TableHead className="text-right">Cost</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead></TableHead>
+                  {(() => {
+                    const SortBtn = ({ k, label, align = "left" }: { k: SortKey; label: string; align?: "left" | "right" }) => (
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(k)}
+                        className={cn(
+                          "inline-flex items-center gap-1 hover:text-foreground transition-colors",
+                          align === "right" && "justify-end w-full",
+                          sortKey === k && "text-foreground font-semibold"
+                        )}
+                      >
+                        {label}
+                        {sortKey === k
+                          ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)
+                          : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                      </button>
+                    );
+                    return <>
+                      <TableHead className="w-[60px]">Image</TableHead>
+                      <TableHead><SortBtn k="name" label="Product" /></TableHead>
+                      <TableHead><SortBtn k="generic" label="Generic" /></TableHead>
+                      <TableHead><SortBtn k="nafdac" label="NAFDAC" /></TableHead>
+                      <TableHead><SortBtn k="packSize" label="Pack" /></TableHead>
+                      <TableHead><SortBtn k="batch" label="Batch" /></TableHead>
+                      <TableHead><SortBtn k="expiry" label="Expiry" /></TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right"><SortBtn k="quantity" label="Stock" align="right" /></TableHead>
+                      <TableHead className="text-right"><SortBtn k="reorderLevel" label="Reorder" align="right" /></TableHead>
+                      <TableHead className="text-right"><SortBtn k="reorderQuantity" label="Reorder Qty" align="right" /></TableHead>
+                      <TableHead>Movement</TableHead>
+                      <TableHead className="text-right"><SortBtn k="costPrice" label="Cost" align="right" /></TableHead>
+                      <TableHead className="text-right"><SortBtn k="sellingPrice" label="Price" align="right" /></TableHead>
+                      <TableHead><SortBtn k="supplier" label="Supplier" /></TableHead>
+                      <TableHead></TableHead>
+                    </>;
+                  })()}
                 </TableRow>
               </TableHeader>
               <TableBody>

@@ -14,6 +14,13 @@ import { format } from "date-fns";
 
 type CartLine = SaleItem & { stock: number; cost: number };
 
+function loadVatPrefs(): { vatEnabled: boolean; vatRate: number } {
+  try {
+    const p = JSON.parse(localStorage.getItem("pharmaguard_prefs") || "{}");
+    return { vatEnabled: !!p.vatEnabled, vatRate: Number(p.vatRate) || 0 };
+  } catch { return { vatEnabled: false, vatRate: 0 }; }
+}
+
 export default function POS() {
   const products = useStore((s) => s.products);
   const user = useStore((s) => s.user);
@@ -67,7 +74,10 @@ export default function POS() {
   const setQty = (id: string, qty: number) => setCart((c) => c.map((l) => l.productId === id ? { ...l, qty: Math.max(1, Math.min(l.stock, qty)) } : l));
   const remove = (id: string) => setCart((c) => c.filter((l) => l.productId !== id));
 
-  const total = cart.reduce((a, l) => a + l.qty * l.price, 0);
+  const vat = useMemo(() => loadVatPrefs(), [lastReceipt, controlledOpen]);
+  const subtotal = cart.reduce((a, l) => a + l.qty * l.price, 0);
+  const vatAmount = vat.vatEnabled ? +(subtotal * (vat.vatRate / 100)).toFixed(2) : 0;
+  const total = +(subtotal + vatAmount).toFixed(2);
   const profit = cart.reduce((a, l) => a + l.qty * (l.price - l.cost), 0);
   const change = payment === "Cash" ? Math.max(0, tendered - total) : 0;
 
@@ -92,7 +102,7 @@ export default function POS() {
         });
       }
     }
-    setLastReceipt({ ...sale, customer, tendered, change });
+    setLastReceipt({ ...sale, customer, tendered, change, subtotal, vatAmount, vatRate: vat.vatRate, vatEnabled: vat.vatEnabled });
     setCart([]); setCustomer(""); setTendered(0); setControlledOpen(false);
     toast.success("Sale recorded");
   };
@@ -212,7 +222,10 @@ export default function POS() {
             </div>
 
             <div className="space-y-2 border-t pt-3">
-              <div className="flex justify-between text-sm"><span>Subtotal</span><span>{NGN(total)}</span></div>
+              <div className="flex justify-between text-sm"><span>Subtotal</span><span>{NGN(subtotal)}</span></div>
+              {vat.vatEnabled && (
+                <div className="flex justify-between text-sm text-muted-foreground"><span>VAT ({vat.vatRate}%)</span><span>{NGN(vatAmount)}</span></div>
+              )}
               <div className="flex items-center justify-between text-base font-semibold">
                 <span>Total</span><span className="text-primary">{NGN(total)}</span>
               </div>
@@ -302,6 +315,10 @@ function Receipt({ sale, settings }: { sale: any; settings: any }) {
         </tbody>
       </table>
       <div style={{ borderTop: "1px dashed #000", marginTop: 4, paddingTop: 4, fontSize: 12 }}>
+        {sale.vatEnabled && (<>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Subtotal</span><span>NGN {Number(sale.subtotal).toFixed(2)}</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>VAT ({sale.vatRate}%)</span><span>NGN {Number(sale.vatAmount).toFixed(2)}</span></div>
+        </>)}
         <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}><span>TOTAL</span><span>NGN {sale.total.toFixed(2)}</span></div>
         <div style={{ display: "flex", justifyContent: "space-between" }}><span>Payment</span><span>{sale.payment}</span></div>
         {sale.payment === "Cash" && (<>

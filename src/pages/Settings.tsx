@@ -39,6 +39,8 @@ type CompliancePrefs = {
   lowStockAlerts: boolean;
   controlledRequirePrescriber: boolean;
   receiptFooter: string;
+  vatEnabled: boolean;
+  vatRate: number;
 };
 const PREF_KEY = "pharmaguard_prefs";
 const loadPrefs = (): CompliancePrefs => {
@@ -48,10 +50,12 @@ const loadPrefs = (): CompliancePrefs => {
       lowStockAlerts: true,
       controlledRequirePrescriber: true,
       receiptFooter: "Thank you for your patronage. Goods sold are not returnable except defective.",
+      vatEnabled: false,
+      vatRate: 0,
       ...(JSON.parse(localStorage.getItem(PREF_KEY) || "{}")),
     };
   } catch {
-    return { expiryAlertDays: 30, lowStockAlerts: true, controlledRequirePrescriber: true, receiptFooter: "Thank you for your patronage." };
+    return { expiryAlertDays: 30, lowStockAlerts: true, controlledRequirePrescriber: true, receiptFooter: "Thank you for your patronage.", vatEnabled: false, vatRate: 0 };
   }
 };
 
@@ -267,6 +271,20 @@ export default function Settings() {
                     <div className="text-xs text-muted-foreground">Enforce doctor name + Rx ref at dispensing</div>
                   </div>
                   <Switch checked={prefs.controlledRequirePrescriber} onCheckedChange={(v) => setPrefs({ ...prefs, controlledRequirePrescriber: v })} />
+                </div>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <div>
+                    <div className="text-sm font-medium">Charge VAT at checkout</div>
+                    <div className="text-xs text-muted-foreground">FIRS requires VAT only if turnover ≥ ₦25M/year. Off by default.</div>
+                  </div>
+                  <Switch checked={prefs.vatEnabled} onCheckedChange={(v) => setPrefs({ ...prefs, vatEnabled: v })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>VAT rate (%)</Label>
+                  <Input type="number" min={0} max={100} step={0.5} disabled={!prefs.vatEnabled}
+                    value={prefs.vatRate}
+                    onChange={(e) => setPrefs({ ...prefs, vatRate: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) })} />
+                  <p className="text-xs text-muted-foreground">Nigeria standard rate is 7.5%. Applied at checkout and shown as a line on receipts.</p>
                 </div>
               </div>
               <div className="flex justify-end"><Button onClick={savePrefs}>Save preferences</Button></div>
