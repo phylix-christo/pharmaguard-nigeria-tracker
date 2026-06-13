@@ -222,7 +222,10 @@ export default function POS() {
             </div>
 
             <div className="space-y-2 border-t pt-3">
-              <div className="flex justify-between text-sm"><span>Subtotal</span><span>{NGN(total)}</span></div>
+              <div className="flex justify-between text-sm"><span>Subtotal</span><span>{NGN(subtotal)}</span></div>
+              {vat.vatEnabled && (
+                <div className="flex justify-between text-sm text-muted-foreground"><span>VAT ({vat.vatRate}%)</span><span>{NGN(vatAmount)}</span></div>
+              )}
               <div className="flex items-center justify-between text-base font-semibold">
                 <span>Total</span><span className="text-primary">{NGN(total)}</span>
               </div>
