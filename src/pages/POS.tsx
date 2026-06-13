@@ -14,6 +14,13 @@ import { format } from "date-fns";
 
 type CartLine = SaleItem & { stock: number; cost: number };
 
+function loadVatPrefs(): { vatEnabled: boolean; vatRate: number } {
+  try {
+    const p = JSON.parse(localStorage.getItem("pharmaguard_prefs") || "{}");
+    return { vatEnabled: !!p.vatEnabled, vatRate: Number(p.vatRate) || 0 };
+  } catch { return { vatEnabled: false, vatRate: 0 }; }
+}
+
 export default function POS() {
   const products = useStore((s) => s.products);
   const user = useStore((s) => s.user);
