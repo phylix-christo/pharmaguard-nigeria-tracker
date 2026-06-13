@@ -92,7 +92,7 @@ export default function Inventory() {
   const velocity = useMemo(() => salesVelocityMap(sales, 30), [sales]);
 
   const list = useMemo(() => {
-    return products.filter((p) => {
+    const filtered = products.filter((p) => {
       const t = expiryTier(p.expiry);
       const sold30 = velocity.get(p.id) || 0;
       const speed = movementSpeed(sold30);
@@ -110,7 +110,19 @@ export default function Inventory() {
         || p.nafdac.toLowerCase().includes(term)
         || p.batch.toLowerCase().includes(term);
     });
-  }, [products, q, cat, filter, supFilter, expFilter, moveFilter, velocity]);
+    const dir = sortDir === "asc" ? 1 : -1;
+    const numericKeys = new Set(["quantity","reorderLevel","reorderQuantity","costPrice","sellingPrice"]);
+    return [...filtered].sort((a, b) => {
+      let av: any = (a as any)[sortKey];
+      let bv: any = (b as any)[sortKey];
+      if (sortKey === "expiry") { av = new Date(av).getTime() || 0; bv = new Date(bv).getTime() || 0; }
+      else if (numericKeys.has(sortKey)) { av = Number(av) || 0; bv = Number(bv) || 0; }
+      else { av = String(av ?? "").toLowerCase(); bv = String(bv ?? "").toLowerCase(); }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [products, q, cat, filter, supFilter, expFilter, moveFilter, velocity, sortKey, sortDir]);
 
   const openNew = () => { setEditing(null); setDraft(empty); setOpen(true); };
   const openEdit = (p: Product) => { setEditing(p); setDraft({ ...p }); setOpen(true); };
