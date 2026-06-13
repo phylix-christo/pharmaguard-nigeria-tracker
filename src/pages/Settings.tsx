@@ -39,6 +39,8 @@ type CompliancePrefs = {
   lowStockAlerts: boolean;
   controlledRequirePrescriber: boolean;
   receiptFooter: string;
+  vatEnabled: boolean;
+  vatRate: number;
 };
 const PREF_KEY = "pharmaguard_prefs";
 const loadPrefs = (): CompliancePrefs => {
@@ -48,10 +50,12 @@ const loadPrefs = (): CompliancePrefs => {
       lowStockAlerts: true,
       controlledRequirePrescriber: true,
       receiptFooter: "Thank you for your patronage. Goods sold are not returnable except defective.",
+      vatEnabled: false,
+      vatRate: 0,
       ...(JSON.parse(localStorage.getItem(PREF_KEY) || "{}")),
     };
   } catch {
-    return { expiryAlertDays: 30, lowStockAlerts: true, controlledRequirePrescriber: true, receiptFooter: "Thank you for your patronage." };
+    return { expiryAlertDays: 30, lowStockAlerts: true, controlledRequirePrescriber: true, receiptFooter: "Thank you for your patronage.", vatEnabled: false, vatRate: 0 };
   }
 };
 
