@@ -79,6 +79,13 @@ export default function Inventory() {
   const [customPacks, setCustomPacks] = useState<string[]>(() => loadCustom(PACK_KEY));
   const [newCat, setNewCat] = useState("");
   const [newPack, setNewPack] = useState("");
+  type SortKey = "name" | "generic" | "nafdac" | "packSize" | "batch" | "expiry" | "quantity" | "reorderLevel" | "reorderQuantity" | "costPrice" | "sellingPrice" | "supplier";
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const toggleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortKey(k); setSortDir("asc"); }
+  };
   const CATEGORIES = useMemo(() => [...DEFAULT_CATEGORIES, ...customCats, "Others"], [customCats]);
   const PACK_SIZES = useMemo(() => [...DEFAULT_PACK_SIZES, ...customPacks, "Others"], [customPacks]);
 
