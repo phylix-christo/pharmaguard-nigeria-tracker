@@ -253,22 +253,42 @@ export default function Inventory() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[60px]">Image</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Generic</TableHead>
-                  <TableHead>NAFDAC</TableHead>
-                  <TableHead>Pack</TableHead>
-                  <TableHead>Batch</TableHead>
-                  <TableHead>Expiry</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Stock</TableHead>
-                  <TableHead className="text-right">Reorder</TableHead>
-                  <TableHead className="text-right">Reorder Qty</TableHead>
-                  <TableHead>Movement</TableHead>
-                  <TableHead className="text-right">Cost</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead></TableHead>
+                  {(() => {
+                    const SortBtn = ({ k, label, align = "left" }: { k: SortKey; label: string; align?: "left" | "right" }) => (
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(k)}
+                        className={cn(
+                          "inline-flex items-center gap-1 hover:text-foreground transition-colors",
+                          align === "right" && "justify-end w-full",
+                          sortKey === k && "text-foreground font-semibold"
+                        )}
+                      >
+                        {label}
+                        {sortKey === k
+                          ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)
+                          : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                      </button>
+                    );
+                    return <>
+                      <TableHead className="w-[60px]">Image</TableHead>
+                      <TableHead><SortBtn k="name" label="Product" /></TableHead>
+                      <TableHead><SortBtn k="generic" label="Generic" /></TableHead>
+                      <TableHead><SortBtn k="nafdac" label="NAFDAC" /></TableHead>
+                      <TableHead><SortBtn k="packSize" label="Pack" /></TableHead>
+                      <TableHead><SortBtn k="batch" label="Batch" /></TableHead>
+                      <TableHead><SortBtn k="expiry" label="Expiry" /></TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right"><SortBtn k="quantity" label="Stock" align="right" /></TableHead>
+                      <TableHead className="text-right"><SortBtn k="reorderLevel" label="Reorder" align="right" /></TableHead>
+                      <TableHead className="text-right"><SortBtn k="reorderQuantity" label="Reorder Qty" align="right" /></TableHead>
+                      <TableHead>Movement</TableHead>
+                      <TableHead className="text-right"><SortBtn k="costPrice" label="Cost" align="right" /></TableHead>
+                      <TableHead className="text-right"><SortBtn k="sellingPrice" label="Price" align="right" /></TableHead>
+                      <TableHead><SortBtn k="supplier" label="Supplier" /></TableHead>
+                      <TableHead></TableHead>
+                    </>;
+                  })()}
                 </TableRow>
               </TableHeader>
               <TableBody>
