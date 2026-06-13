@@ -286,6 +286,7 @@ export default function Settings() {
                     onChange={(e) => setPrefs({ ...prefs, vatRate: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) })} />
                   <p className="text-xs text-muted-foreground">Nigeria standard rate is 7.5%. Applied at checkout and shown as a line on receipts.</p>
                 </div>
+              </div>
               <div className="flex justify-end"><Button onClick={savePrefs}>Save preferences</Button></div>
             </CardContent>
           </Card>
