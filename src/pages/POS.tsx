@@ -315,6 +315,10 @@ function Receipt({ sale, settings }: { sale: any; settings: any }) {
         </tbody>
       </table>
       <div style={{ borderTop: "1px dashed #000", marginTop: 4, paddingTop: 4, fontSize: 12 }}>
+        {sale.vatEnabled && (<>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Subtotal</span><span>NGN {Number(sale.subtotal).toFixed(2)}</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>VAT ({sale.vatRate}%)</span><span>NGN {Number(sale.vatAmount).toFixed(2)}</span></div>
+        </>)}
         <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}><span>TOTAL</span><span>NGN {sale.total.toFixed(2)}</span></div>
         <div style={{ display: "flex", justifyContent: "space-between" }}><span>Payment</span><span>{sale.payment}</span></div>
         {sale.payment === "Cash" && (<>
