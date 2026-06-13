@@ -102,7 +102,7 @@ export default function POS() {
         });
       }
     }
-    setLastReceipt({ ...sale, customer, tendered, change });
+    setLastReceipt({ ...sale, customer, tendered, change, subtotal, vatAmount, vatRate: vat.vatRate, vatEnabled: vat.vatEnabled });
     setCart([]); setCustomer(""); setTendered(0); setControlledOpen(false);
     toast.success("Sale recorded");
   };
