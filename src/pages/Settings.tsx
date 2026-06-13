@@ -272,7 +272,20 @@ export default function Settings() {
                   </div>
                   <Switch checked={prefs.controlledRequirePrescriber} onCheckedChange={(v) => setPrefs({ ...prefs, controlledRequirePrescriber: v })} />
                 </div>
-              </div>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <div>
+                    <div className="text-sm font-medium">Charge VAT at checkout</div>
+                    <div className="text-xs text-muted-foreground">FIRS requires VAT only if turnover ≥ ₦25M/year. Off by default.</div>
+                  </div>
+                  <Switch checked={prefs.vatEnabled} onCheckedChange={(v) => setPrefs({ ...prefs, vatEnabled: v })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>VAT rate (%)</Label>
+                  <Input type="number" min={0} max={100} step={0.5} disabled={!prefs.vatEnabled}
+                    value={prefs.vatRate}
+                    onChange={(e) => setPrefs({ ...prefs, vatRate: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) })} />
+                  <p className="text-xs text-muted-foreground">Nigeria standard rate is 7.5%. Applied at checkout and shown as a line on receipts.</p>
+                </div>
               <div className="flex justify-end"><Button onClick={savePrefs}>Save preferences</Button></div>
             </CardContent>
           </Card>
