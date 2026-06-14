@@ -138,6 +138,10 @@ export default function Reports() {
     }
 
     doc.save(`inspection-ready-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    } catch (err) {
+      console.error("Inspection PDF failed:", err);
+      alert("Failed to generate Inspection PDF: " + (err as Error)?.message);
+    }
   };
 
 
