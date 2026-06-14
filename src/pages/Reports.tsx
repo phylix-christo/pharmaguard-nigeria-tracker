@@ -135,7 +135,7 @@ export default function Reports() {
     for (let i = 1; i <= pages; i++) {
       doc.setPage(i);
       doc.setFontSize(8); doc.setTextColor(120);
-      doc.text(`${settings.name} — Inspection Report — Page ${i} of ${pages}`, pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
+      doc.text(`${s(settings?.name, "Pharmacy")} — Inspection Report — Page ${i} of ${pages}`, pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
     }
 
     doc.save(`inspection-ready-${format(new Date(), "yyyy-MM-dd")}.pdf`);
