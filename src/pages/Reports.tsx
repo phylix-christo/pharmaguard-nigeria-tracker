@@ -64,6 +64,7 @@ export default function Reports() {
   }).sort((a, b) => b.sold - a.sold);
 
   const inspectionReadyPdf = () => {
+    try {
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
     doc.setFontSize(16); doc.setFont("helvetica", "bold");
@@ -137,6 +138,10 @@ export default function Reports() {
     }
 
     doc.save(`inspection-ready-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    } catch (err) {
+      console.error("Inspection PDF failed:", err);
+      alert("Failed to generate Inspection PDF: " + (err as Error)?.message);
+    }
   };
 
 
