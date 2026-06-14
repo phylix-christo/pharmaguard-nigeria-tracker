@@ -158,9 +158,14 @@ export default function Reports() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Reports & Compliance</h1>
-        <p className="text-sm text-muted-foreground">Generate sales, stock, expiry, movement and statutory inspection reports</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Reports & Compliance</h1>
+          <p className="text-sm text-muted-foreground">Generate sales, stock, expiry, movement and statutory inspection reports</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={inspectionReadyPdf}>
+          <ShieldCheck className="mr-1 h-4 w-4" />Inspection Ready PDF
+        </Button>
       </div>
 
       <Card className="shadow-card">
