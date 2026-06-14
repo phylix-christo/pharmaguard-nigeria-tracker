@@ -64,6 +64,7 @@ export default function Reports() {
   }).sort((a, b) => b.sold - a.sold);
 
   const inspectionReadyPdf = () => {
+    try {
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
     doc.setFontSize(16); doc.setFont("helvetica", "bold");
