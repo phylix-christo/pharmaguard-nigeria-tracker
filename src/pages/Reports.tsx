@@ -67,15 +67,16 @@ export default function Reports() {
     try {
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
+    const s = (v: any, fb = "—") => (v === undefined || v === null || v === "" ? fb : String(v));
     doc.setFontSize(16); doc.setFont("helvetica", "bold");
-    doc.text(settings.name, pageW / 2, 16, { align: "center" });
+    doc.text(s(settings?.name, "Pharmacy"), pageW / 2, 16, { align: "center" });
     doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text(settings.address, pageW / 2, 22, { align: "center" });
-    doc.text(`Tel: ${settings.phone}  ·  PCN License: ${settings.premiseLicense || "—"}`, pageW / 2, 27, { align: "center" });
+    doc.text(s(settings?.address), pageW / 2, 22, { align: "center" });
+    doc.text(`Tel: ${s(settings?.phone)}  ·  PCN License: ${s(settings?.premiseLicense)}`, pageW / 2, 27, { align: "center" });
     doc.setFontSize(13); doc.setFont("helvetica", "bold");
     doc.text("INSPECTION-READY COMPLIANCE REPORT", pageW / 2, 36, { align: "center" });
     doc.setFontSize(9); doc.setFont("helvetica", "normal");
-    doc.text(`Period: ${from} to ${to}  ·  Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`, pageW / 2, 41, { align: "center" });
+    doc.text(`Period: ${s(from)} to ${s(to)}  ·  Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`, pageW / 2, 41, { align: "center" });
 
     let y = 48;
     const section = (title: string) => {
@@ -134,7 +135,7 @@ export default function Reports() {
     for (let i = 1; i <= pages; i++) {
       doc.setPage(i);
       doc.setFontSize(8); doc.setTextColor(120);
-      doc.text(`${settings.name} — Inspection Report — Page ${i} of ${pages}`, pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
+      doc.text(`${s(settings?.name, "Pharmacy")} — Inspection Report — Page ${i} of ${pages}`, pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
     }
 
     doc.save(`inspection-ready-${format(new Date(), "yyyy-MM-dd")}.pdf`);
