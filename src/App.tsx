@@ -16,6 +16,7 @@ import Poisons from "@/pages/Poisons";
 import Suppliers from "@/pages/Suppliers";
 import SalesHistory from "@/pages/SalesHistory";
 import Settings from "@/pages/Settings";
+import Forecast from "@/pages/Forecast";
 import NotFound from "@/pages/NotFound";
 import { store } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,6 +83,7 @@ const App = () => (
               <Route path="/sales" element={<SalesHistory />} />
               <Route path="/suppliers" element={<Suppliers />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/forecast" element={<Forecast />} />
               <Route path="/audit" element={<Audit />} />
               <Route path="/poisons" element={<Poisons />} />
               <Route path="/settings" element={<Settings />} />
