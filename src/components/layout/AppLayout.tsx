@@ -4,7 +4,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
   SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Package, ShoppingCart, FileBarChart2, ShieldAlert, History, LogOut, Pill, Moon, Sun, Truck, ReceiptText, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, FileBarChart2, ShieldAlert, History, LogOut, Pill, Moon, Sun, Truck, ReceiptText, Settings as SettingsIcon, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { store, useStore } from "@/lib/store";
 import { useTheme } from "next-themes";
@@ -16,6 +16,7 @@ const items = [
   { title: "Sales History", url: "/sales", icon: ReceiptText },
   { title: "Suppliers", url: "/suppliers", icon: Truck },
   { title: "Reports", url: "/reports", icon: FileBarChart2 },
+  { title: "AI Forecast", url: "/forecast", icon: Sparkles },
   { title: "Poisons Register", url: "/poisons", icon: ShieldAlert },
   { title: "Audit Trail", url: "/audit", icon: History },
   { title: "Settings", url: "/settings", icon: SettingsIcon },
